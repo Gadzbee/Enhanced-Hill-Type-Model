@@ -1110,20 +1110,20 @@ C----------------------------------------------
             print*, "q = ", q
       ENDIF
 C-----------------------------------------------
-      IF (int(cm(29)).EQ.1.0) THEN
-      IF (ncycle/100 == (REAL(ncycle)/100)) THEN
-            OPEN(UNIT=10, FILE=FILENAME, STATUS='OLD', ACTION='WRITE',
-     1 POSITION='APPEND')
-            IF (IO_STATUS /= 0) THEN
-                  PRINT *, 'Error: Cannot open file ', FILENAME
-                  STOP
-            END IF
-                  WRITE(10,'(F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4" ",F10.4)') tt, 
-     1  UVAR(10,I)-UVAR(9,I), UVAR(10,I), UVAR(14,I),
-     2  UVAR(5,I), UVAR(7,I), UVAR(8,I),q,STIM,UVAR(4,I)
-            CLOSE(UNIT=10)
-      ENDIF
-      ENDIF
+C      IF (int(cm(29)).EQ.1.0) THEN
+C      IF (ncycle/100 == (REAL(ncycle)/100)) THEN
+C            OPEN(UNIT=10, FILE=FILENAME, STATUS='OLD', ACTION='WRITE',
+C     1 POSITION='APPEND')
+C            IF (IO_STATUS /= 0) THEN
+C                  PRINT *, 'Error: Cannot open file ', FILENAME
+C                  STOP
+C            END IF
+C                  WRITE(10,'(F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4," ",F10.4" ",F10.4)') tt, 
+C     1  UVAR(10,I)-UVAR(9,I), UVAR(10,I), UVAR(14,I),
+C     2  UVAR(5,I), UVAR(7,I), UVAR(8,I),q,STIM,UVAR(4,I)
+C            CLOSE(UNIT=10)
+C      ENDIF
+C     ENDIF
 C-----------------------------------------------     
 C        ***       TIMESTEP       ***
 C============================================
