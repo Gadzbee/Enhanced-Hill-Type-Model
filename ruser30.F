@@ -1,14 +1,14 @@
 ! C-----------------------------------------------
 ! C   calc_F_isom FUNCTION !output calc_F_ISOM 
 ! C----------------------------------------------	   
-       double precision FUNCTION calc_F_isom(l_CE,cm)
+       double precision FUNCTION calc_F_isom(l_CE,l_CE_opt,cm)
 ! ! C!  Computation of the isometric force developped by the muscle               
             double precision :: cm(*)
-            double precision :: l_CE , f_isom_temp
-                   IF (l_CE.GE.cm(10)) THEN
-                        f_isom_temp = exp(-(abs(((l_CE/cm(10))-1.0)/cm(11)))**cm(12))
+            double precision :: l_CE , f_isom_temp,l_CE_opt
+                   IF (l_CE.GE.l_CE_opt) THEN
+                        f_isom_temp = exp(-(abs(((l_CE/l_CE_opt)-1.0)/cm(11)))**cm(12))
                    ELSE
-                        f_isom_temp = exp(-(abs(((l_CE/cm(10))-1.0)/cm(13)))**cm(14))
+                        f_isom_temp = exp(-(abs(((l_CE/l_CE_opt)-1.0)/cm(13)))**cm(14))
                    END IF
 C Additional code to detect values less or equal than zero
                    IF (f_isom_temp.LE.1E-13) THEN
@@ -38,14 +38,14 @@ C-----------------------------------------------
 C   calc_F_SEE FUNCTION !output calc_F_SEE
 C----------------------------------------------
 C!  Force of the serial elastic element SEE 
-      double precision function calc_F_SEE(l_CE,cm,elleng,l_SEE_nll,v_SEE,K_SEE_nl,K_SEE_l)
+      double precision function calc_F_SEE(l_CE,l_SEE_0,cm,elleng,l_SEE_nll,v_SEE,K_SEE_nl,K_SEE_l)
             double precision :: cm(*)
             double precision :: l_CE,K_SEE_nl,K_SEE_l,l_SEE,l_SEE_nll
-            double precision :: v_SEE,elleng
+            double precision :: v_SEE,elleng,l_SEE_0
             l_SEE = elleng - l_CE
-            IF ((l_SEE.LT.l_SEE_nll).and.(l_SEE.GT.cm(22))) THEN
-                  calc_F_SEE = K_SEE_nl*((l_SEE-cm(22))**v_SEE)
-            ELSE IF ((l_SEE.GE.l_SEE_nll).and.(l_SEE.GT.cm(22))) THEN
+            IF ((l_SEE.LT.l_SEE_nll).and.(l_SEE.GT.l_SEE_0)) THEN
+                  calc_F_SEE = K_SEE_nl*((l_SEE-l_SEE_0)**v_SEE)
+            ELSE IF ((l_SEE.GE.l_SEE_nll).and.(l_SEE.GT.l_SEE_0)) THEN
                   calc_F_SEE = cm(25) + K_SEE_l*(l_SEE - l_SEE_nll)
             ELSE
                   calc_F_SEE = 0.0d0
@@ -57,14 +57,14 @@ C-----------------------------------------------
 C   calc_F_SUM FUNCTION 
 C-----------------------------------------------   
 C
-      DOUBLE PRECISION FUNCTION calc_F_SUM(l_CE,elleng,q,cm, l_PEE0,K_PEE,l_SEE_nll,v_SEE,K_SEE_nl, K_SEE_l)
+      DOUBLE PRECISION FUNCTION calc_F_SUM(l_CE,l_CE_opt,l_SEE_0,elleng,q,cm, l_PEE0,K_PEE,l_SEE_nll,v_SEE,K_SEE_nl, K_SEE_l)
             DOUBLE PRECISION, dimension(39) :: cm
             DOUBLE PRECISION l_PEE0, K_PEE, v_SEE, K_SEE_nl, K_SEE_l,l_SEE_nll,l_CE
             DOUBLE PRECISION F_isom, F_PEE, F_SEE, F_CE_init, elleng, q
-            DOUBLE PRECISION calc_F_isom, calc_F_PEE, calc_F_SEE
-            F_isom = calc_F_isom(l_CE,cm)
+            DOUBLE PRECISION calc_F_isom, calc_F_PEE, calc_F_SEE,l_SEE_0,l_CE_opt
+            F_isom = calc_F_isom(l_CE,l_CE_opt,cm)
             F_PEE = calc_F_PEE(l_CE, cm, l_PEE0, K_PEE)
-            F_SEE = calc_F_SEE(l_CE,cm,elleng,l_SEE_nll,v_SEE,K_SEE_nl,K_SEE_l) 
+            F_SEE = calc_F_SEE(l_CE,l_SEE_0,cm,elleng,l_SEE_nll,v_SEE,K_SEE_nl,K_SEE_l) 
             F_CE_init = cm(9)*q*F_isom
             calc_F_SUM = F_SEE - F_CE_init - F_PEE
       RETURN
@@ -90,8 +90,6 @@ c     NO CONTROLLER
                   IF (cm(2).GT.0.0) THEN 
 C           STIM level from curve
                         STIM = GET_U_FUNC(IFUNC1,tt,DXDY)
-                        print*,'dans la fonct calc_stim IFUNC1= ', IFUNC1
-                        print *, 'STIM_function = ',STIM
                   ELSE
 c           constant STIM level
                         STIM = abs(cm(2))
@@ -101,7 +99,6 @@ c           constant STIM level
                   ELSE IF (STIM.LT.0.0) THEN
                         STIM = 0.0
                   ENDIF
-                  print *, 'case0'
             CASE (1)
 c     LAMBDA CONTROLLER
                   IF (cm(34).LT.0.0) THEN
@@ -131,9 +128,8 @@ c           constant STIM level
                               STIM = 0.0
                         ENDIF
                   ELSE
-                        STIM = STIM_lambda(cm,UVAR,lCEdelay,dotlCEdelay,tt,lambda,dlambda,NUVAR,I)
+                        STIM = STIM_lambda(cm ,l_CE_opt,UVAR,lCEdelay,dotlCEdelay,tt,lambda,dlambda,NUVAR,I)
                   ENDIF
-                  print *, 'case1 '
             CASE (2,3) 
 c     HYBRID CONTROLLER STANDARD and KISTEMAKER
                   IF (cm(2).GT.0.0) THEN
@@ -162,10 +158,9 @@ c           lambda = constant
                   ENDIF
                   UVAR(50,I) = lambda
                   IF (tt.GE.cm(38)) THEN
-                        STIM_closed = STIM_lambda(cm ,UVAR,lCEdelay,dotlCEdelay,tt,lambda,dlambda,NUVAR,I)
-                        STIM = STIM_hybrid(cm,UVAR,STIM_open,lambda,dlambda,lCEdelay,DOtlCEdelay,tt,NUVAR,I)
+                        STIM_closed = STIM_lambda(cm ,l_CE_opt,UVAR,lCEdelay,dotlCEdelay,tt,lambda,dlambda,NUVAR,I)
+                        STIM = STIM_hybrid(cm,l_CE_opt,UVAR,STIM_open,lambda,dlambda,lCEdelay,DOtlCEdelay,tt,NUVAR,I)
                   ENDIF
-                  print *, 'case2,3 '
             CASE (4) 
 c       REFLEX CONTROLLER    
                   IF (tt.LT.cm(38)) THEN
@@ -184,14 +179,11 @@ c           constant STIM level
                   ELSE
                         STIM = STIM_reflex(ncycle,cm,UVAR,tt,I,NUVAR)
                   ENDIF
-                  print *, 'case4 '
             CASE DEFAULT
                   STIM = 0
-                  print *, 'case_defautlt '
             END SELECT
             calc_STIM = STIM
             UVAR(2,I) = STIM
-            print*, 'STIM_calc = ',UVAR(2,I)
             RETURN
       END FUNCTION calc_STIM
 C		
@@ -228,13 +220,12 @@ C-----------------------------------------------
 C   calc_q FUNCTION 
 C-----------------------------------------------   
 
-      DOUBLE PRECISION FUNCTION calc_q(cm,UVAR,tt,STIM,DT,NUVAR,I,GET_U_FUNC,IFUNC2)
+      DOUBLE PRECISION FUNCTION calc_q(cm,l_CE_opt,UVAR,tt,STIM,DT,NUVAR,I,GET_U_FUNC,IFUNC2)
             INTEGER NUVAR,I,IFUNC2
             DOUBLE PRECISION cm(*), UVAR(NUVAR,I)
             DOUBLE PRECISION STIM, q, gam_rel, rho_act, tau
-            DOUBLE PRECISION calc_dq, calc_dgam,tt, DT,GET_U_FUNC     
+            DOUBLE PRECISION calc_dq, calc_dgam,tt, DT,GET_U_FUNC,l_CE_opt     
             q = cm(3)
-            print*, 'cm(1) dans la fonction = ',cm(1)
             IF (cm(1).EQ.1.0) THEN
 c     ZAJAC activation dynamics      
 c       get tau
@@ -252,18 +243,17 @@ c       calc new gamma
               gam_rel = UVAR(15,I) + calc_dgam(cm,STIM,UVAR,NUVAR,I)*DT
               UVAR(15,I) = gam_rel
 c       calc new rho
-              rho_act = cm(4)*cm(5)*(cm(6)-1.0)/(cm(6)-(UVAR(10,I)/cm(10)))
-     1    *(UVAR(10,I)/cm(10))
+              rho_act = cm(4)*cm(5)*(cm(6)-1.0)/(cm(6)-(UVAR(10,I)/l_CE_opt))
+     1    *(UVAR(10,I)/l_CE_opt)
 c       calc new q
               q = (cm(3)+(rho_act*gam_rel)**3)/(1.0+(rho_act*gam_rel)**3)
-              print*, 'HATZE'
             ELSE IF (cm(1).EQ.3.0) THEN
 c     Modified HATZE activation dynamics by Rockenfeller, Günther 2018
 c       calc new gamma
               gam_rel = UVAR(15,I) + calc_dgam(cm,STIM,UVAR,NUVAR,I)*DT
               UVAR(15,I) = gam_rel
 c       calc new rho
-              rho_act = cm(4)*cm(5)*UVAR(10,I)/cm(10)
+              rho_act = cm(4)*cm(5)*UVAR(10,I)/l_CE_opt
 c       calc new q
               q = (cm(3)+(rho_act*gam_rel)**3)/(1.0+(rho_act*gam_rel)**3)
             ENDIF
@@ -274,7 +264,6 @@ c       calc new q
             ENDIF
             UVAR(3,I) = q
             calc_q = q
-            print*, 'q = ',q 
             RETURN
             END FUNCTION calc_q
 C-----------------------------------------------
@@ -357,7 +346,7 @@ C-----------------------------------------------
 C   ZEROIN FUNCTION
 C----------------------------------------------- 
 C         
-      DOUBLE PRECISION function ZEROIN(elleng,act,cm,l_SEE_nll,K_SEE_nl,v_SEE,l_PEE0,K_PEE,K_SEE_l)
+      DOUBLE PRECISION function ZEROIN(elleng,l_CE_opt,l_SEE_0,act,cm,l_SEE_nll,K_SEE_nl,v_SEE,l_PEE0,K_PEE,K_SEE_l)
       IMPLICIT NONE
 C!-----------------------------------------------
 c!     Root-finding algorithm using the ZEROIN function
@@ -384,7 +373,7 @@ c!         OUTPUT:
 c!         ZEROIN ABCISSA APPROXIMATING A ZERO OF F IN THE INTERVAL AX,BX
       DOUBLE PRECISION A,B,C,D,E,EPS,FA,FB,FC,TOL1,XM,P,Q,R,S,TOL
       DOUBLE PRECISION AX,BX, TOL_CALC
-      DOUBLE PRECISION calc_F_SUM,v_SEE,l_PEE0,K_PEE,K_SEE_l
+      DOUBLE PRECISION calc_F_SUM,v_SEE,l_PEE0,K_PEE,K_SEE_l,l_CE_opt,l_SEE_0
 c!
 c!   Get the numerical machine tolerance 
 c!
@@ -399,12 +388,11 @@ c!         FIND INTERVAL
 c         INITIALIZATION
       A   = AX
       B   = BX
-      FA  = calc_F_SUM(A, elleng,act,cm, l_PEE0,K_PEE,
+      FA  = calc_F_SUM(A,l_CE_opt,l_SEE_0,elleng,act,cm, l_PEE0,K_PEE,
      1 l_SEE_nll,v_SEE,K_SEE_nl, K_SEE_l)
 C
-      FB  = calc_F_SUM(B ,elleng,act,cm, l_PEE0,
+      FB  = calc_F_SUM(B ,l_CE_opt,l_SEE_0,elleng,act,cm, l_PEE0,
      2 K_PEE,l_SEE_nll,v_SEE,K_SEE_nl, K_SEE_l)
-C
 c        BEGIN STEP
 20    C   = A
       FC  = FA
@@ -455,7 +443,7 @@ c        COMPLETE STEP
       FA  = FB
       IF (ABS(D) .GT. TOL1) B = B+D
       IF (ABS(D) .LE. TOL1) B = B+SIGN(TOL1,XM)
-      FB  = calc_F_SUM(B ,elleng,act,cm, l_PEE0,
+      FB  = calc_F_SUM(B,l_CE_opt,l_SEE_0,elleng,act,cm, l_PEE0,
      1 K_PEE,l_SEE_nll,v_SEE,K_SEE_nl, K_SEE_l)
       IF ((FB*(FC/ABS(FC))) .GT. 0.0) GO TO 20
       GO TO 30
@@ -468,12 +456,12 @@ C-----------------------------------------------
 C   STIM_lambda FUNCTION ! output STIM_lambda
 C----------------------------------------------
 C
-      DOUBLE PRECISION FUNCTION STIM_lambda(cm ,UVAR,lCEdelay,dotlCEdelay,tt,lambda,dlambda,NUVAR,I)
+      DOUBLE PRECISION FUNCTION STIM_lambda(cm ,l_CE_opt,UVAR,lCEdelay,dotlCEdelay,tt,lambda,dlambda,NUVAR,I)
             DOUBLE PRECISION cm(*),UVAR(NUVAR,I)
-            DOUBLE PRECISION lCEdelay,dotlCEdelay,lambda, tt, dlambda
+            DOUBLE PRECISION lCEdelay,dotlCEdelay,lambda, tt, dlambda,l_CE_opt
             INTEGER I,NUVAR
 C
-                  STIM_lambda = (cm(35)*(lCEdelay-lambda)+cm(36)*(dotlCEdelay-dlambda))/cm(10)
+                  STIM_lambda = (cm(35)*(lCEdelay-lambda)+cm(36)*(dotlCEdelay-dlambda))/l_CE_opt
                   IF (cm(33).EQ.3) THEN
                         IF (STIM_lambda.GT.1.0) THEN
                               STIM_lambda = 1.0d0
@@ -498,14 +486,14 @@ C-----------------------------------------------
 C  Hybrid controller FUNCTION ! output STIM_hybrid
 C----------------------------------------------
 C
-      DOUBLE PRECISION function STIM_hybrid(cm,UVAR,STIM_open,lambda,dlambda,lCEdelay,DOtlCEdelay,tt,NUVAR,I)
+      DOUBLE PRECISION function STIM_hybrid(cm,l_CE_opt,UVAR,STIM_open,lambda,dlambda,lCEdelay,DOtlCEdelay,tt,NUVAR,I)
             IMPLICIT NONE
             INTEGER NUVAR, I
             DOUBLE PRECISION cm(*),UVAR(NUVAR,I)
             DOUBLE PRECISION STIM_open, lambda, dlambda, tt
-            DOUBLE PRECISION lCEdelay, DOtlCEdelay
+            DOUBLE PRECISION lCEdelay, DOtlCEdelay,l_CE_opt
             IF (lCEdelay.GT.lambda) THEN
-                  STIM_hybrid=(STIM_open+(cm(35)*(lCEdelay-lambda)+cm(36)*(DOtlCEdelay-dlambda))/cm(10))
+                  STIM_hybrid=(STIM_open+(cm(35)*(lCEdelay-lambda)+cm(36)*(DOtlCEdelay-dlambda))/l_CE_opt)
             ELSE 
                   STIM_hybrid=STIM_open
             END IF
@@ -696,7 +684,7 @@ C-----------------------------------------------
      . lCEdelay, l_CE_ref, strain, STIM_reflex_prev,
      . buffersize, idx_begin_lCEbuffer, lasttime, calc_F_isom, calc_F_PEE, calc_F_SEE,
      . calc_F_SUM, calc_dq,calc_q, calc_dgam, epsilon,tau, lambda,dlambda,
-     . rho_act, STIM_lambda, STIM_hybrid, STIM_reflex,dq
+     . rho_act, STIM_lambda, STIM_hybrid, STIM_reflex,dq,l_CE_opt,l_SEE_0
 C-----------------------------------------------
 C-----------------------------------------------
       DOUBLE PRECISION
@@ -773,10 +761,8 @@ c!     Variables (activation dynamic)
       SENS_ID     = INT(GET_U_GEO(5,IPROP)+0.0001)
                     
       STIM_ID     = INT(GET_U_GEO(6,IPROP)+0.0001)
-      print*, 'debut de ruser 30 STIM_ID = ',STIM_ID
       STIM_ID_f   = GET_U_GEO(6,IPROP)
       cm(2)       = STIM_ID_f                      ! *** is/can be evtl. a function // NOT USED YET 
-      print*, 'cm(2) = ',cm(2)
 
 c!        IFUNC1 = GET_U_PNU(1,IPROP,KFUNC)
 c!        
@@ -900,8 +886,7 @@ C
       threshold   = GET_U_GEO(41,IPROP)
       cm(39)      = threshold
 
-      IFUNC1 = GET_U_PNU(1,IPROP,KFUNC)
-      print*, 'debut de ruse30 IFUNC1 = ',IFUNC1          
+      IFUNC1 = GET_U_PNU(1,IPROP,KFUNC)        
       IFUNC2 = GET_U_PNU(2,IPROP,KFUNC)         
       IFUNC3 = GET_U_PNU(3,IPROP,KFUNC)      
 C
@@ -973,13 +958,6 @@ c! cm(31) and cm(32) not used ?
 C-----------------------------------------------
 C   Muscle constant parameters calculation
 C-----------------------------------------------
-      l_PEE0 = cm(19)*cm(10) 
-      d_SE_max = cm(27)*(cm(9)*cm(15))/(cm(10)*cm(16))
-      l_SEE_nll = (1.0+cm(23))*cm(22) 
-      v_SEE = cm(23)/cm(24)
-      K_SEE_nl = cm(25)/(cm(23)*cm(22))**v_SEE
-      K_SEE_l = cm(25)/(cm(24)*cm(22))
-      K_PEE = cm(21)*(cm(9)/(cm(10)*(cm(11) + 1.0-cm(19)))**cm(20))
 C		
 C -----------------------------------      
 C Loop over elements
@@ -989,6 +967,15 @@ C-----------------------------------------------
 C   Calc length element
 C-----------------------------------------------
 C
+      l_CE_opt = cm(10)*UVAR(16,I)
+      l_SEE_0 = (1-cm(10))*UVAR(16,I)
+      l_PEE0 = cm(19)*l_CE_opt 
+      d_SE_max = cm(27)*(cm(9)*cm(15))/(l_CE_opt*cm(16))
+      l_SEE_nll = (1.0+cm(23))*l_SEE_0 
+      v_SEE = cm(23)/cm(24)
+      K_SEE_nl = cm(25)/(cm(23)*l_SEE_0)**v_SEE
+      K_SEE_l = cm(25)/(cm(24)*l_SEE_0)
+      K_PEE = cm(21)*(cm(9)/(l_CE_opt*(cm(11) + 1.0-cm(19)))**cm(20))
 !         elleng = sqrt((x(1,ix1(i))-x(1,ix2(i)))**2
 !     1  +(x(2,ix1(i))-x(2,ix2(i)))**2
 !      2  +(x(3,ix1(i))-x(3,ix2(i)))**2)+cm(8) 
@@ -1009,10 +996,10 @@ C-----------------------------------------------
 C!           UVAR(13,I)=anint(cm(37)/dt1)		
              dot_l_MTC = 0.0
              q = cm(3)
-             l_CE = ZEROIN(elleng ,q,cm,
+             l_CE = ZEROIN(elleng ,l_CE_opt,l_SEE_0,q,cm,
      1 l_SEE_nll,K_SEE_nl,v_SEE,l_PEE0,K_PEE,K_SEE_l)
 
-            CALL hill_model(l_CE, elleng, dot_l_MTC, q, cm,
+            CALL hill_model(l_CE,l_CE_opt,l_SEE_0,elleng, dot_l_MTC, q, cm,
      1 F_MTC, F_SEE, F_SDE, F_CE, F_PEE, F_isom, DT, UVAR,  
      2 dot_l_CE, tt, i, l_PEE0, K_PEE, d_SE_max, l_SEE_nll, v_SEE, K_SEE_nl, K_SEE_l, epsilon, NUVAR)
       END IF
@@ -1061,12 +1048,12 @@ c!      Use Activation Values directly
             ELSE
                   cm(1) = 3
                   STIM = calc_STIM(cm,UVAR,tt,lCEdelay,dotlCEdelay,ncycle,NUVAR,I,IFUNC1,IFUNC2,IFUNC3,GET_U_FUNC)
-                  q = calc_q(cm,UVAR,tt,STIM,DT,NUVAR,I,GET_U_FUNC,IFUNC2)      
+                  q = calc_q(cm,l_CE_opt,UVAR,tt,STIM,DT,NUVAR,I,GET_U_FUNC,IFUNC2)      
             END IF
       ENDIF
       ELSE 
             STIM = calc_STIM(cm,UVAR,tt,lCEdelay,dotlCEdelay,ncycle,NUVAR,I,IFUNC1,IFUNC2,IFUNC3,GET_U_FUNC)
-            q = calc_q(cm,UVAR,tt,STIM,DT,NUVAR,I,GET_U_FUNC,IFUNC2)
+            q = calc_q(cm,l_CE_opt,UVAR,tt,STIM,DT,NUVAR,I,GET_U_FUNC,IFUNC2)
             print*, 'q scirpt = ',q
             print*, 'STIM script = ',STIM
       ENDIF
@@ -1076,7 +1063,7 @@ C     IF (ncycle.GT.1) THEN
       dot_l_MTC = VX(I)
       UVAR(11,I) = dot_l_MTC
 C------------------------------------------------
-            CALL hill_model(l_CE, elleng, dot_l_MTC, q, cm,
+            CALL hill_model(l_CE,l_CE_opt,l_SEE_0,elleng, dot_l_MTC, q, cm,
      1 F_MTC, F_SEE, F_SDE, F_CE, F_PEE, F_isom, DT, UVAR,  
      2 dot_l_CE, tt, i, l_PEE0, K_PEE, d_SE_max, l_SEE_nll, v_SEE, K_SEE_nl, K_SEE_l, epsilon, NUVAR)
 C     ENDIF
@@ -1097,17 +1084,18 @@ C-----------------------------------------------
       UVAR(12,I) = dot_l_CE
 C----------------------------------------------
       IF (ncycle/100 == (REAL(ncycle)/100)) THEN
-            print*, "F_MTC = ", F_MTC
-            print*, "F_SEE = ", F_SEE
-            print*, "F_SDE = ", F_SDE
-            print*, "F_CE = ", F_CE
-            print*, "F_PEE = ", F_PEE
-            print*, "F_isom = ", F_isom
-            print*, "elleng = ", elleng
-            print*, "l_CE = ", l_CE
-            print*, "dot_l_CE = ", dot_l_CE
-            print*, "dot_l_MTC = ", dot_l_MTC
-            print*, "q = ", q
+C            print*, "F_MTC = ", F_MTC
+C            print*, "F_SEE = ", F_SEE
+C            print*, "F_SDE = ", F_SDE
+C           print*, "F_CE = ", F_CE
+C           print*, "F_PEE = ", F_PEE
+C            print*, "F_isom = ", F_isom
+C            print*, "elleng = ", elleng
+C            print*, "l_CE = ", l_CE
+C            print*, "dot_l_CE = ", dot_l_CE
+C            print*, "dot_l_MTC = ", dot_l_MTC
+C            print*, "q = ", q
+             print*, "UVAR(16,I)=", UVAR(16,I)
       ENDIF
 C-----------------------------------------------
 C      IF (int(cm(29)).EQ.1.0) THEN
@@ -1144,7 +1132,7 @@ C-----------------------------------------------
 C-----------------------------------------------
 C   hill_model SUBROUTINE 
 C-----------------------------------------------
-      SUBROUTINE hill_model(l_CE,elleng,dot_l_MTC,q,cm,
+      SUBROUTINE hill_model(l_CE,l_CE_opt,l_SEE_0,elleng,dot_l_MTC,q,cm,
      1 F_MTC,F_SEE, F_SDE ,F_CE,F_PEE,F_isom,DT,UVAR,dot_l_CE,tt,I,l_PEE0,
      2 K_PEE,d_SE_max,l_SEE_nll,v_SEE,K_SEE_nl,K_SEE_l,epsilon,NUVAR)
 c
@@ -1158,23 +1146,23 @@ c
        DOUBLE PRECISION v_max, P, O1, O2, O3, F_CE, F_CE_init, F_SDE, F_MTC
        DOUBLE PRECISION dot_l_MTC, elleng, K_SEE_l, Q_Arel, F_SUM, AREA
        DOUBLE PRECISION l_MTC_0,DT,tt,epsilon, Power, dot_l_SDE,q
-       DOUBLE precision :: calc_F_isom, calc_F_PEE, calc_F_SEE
+       DOUBLE precision :: calc_F_isom, calc_F_PEE, calc_F_SEE,l_CE_opt,l_SEE_0
  !common /coeff/ l_PEE0,K_PEE,d_SE_max,l_SEE_nll,v_SEE,K_SEE_nl
  !1 ,K_SEE_l,epsilon
 c  Isometric Force
 c
-       F_isom = calc_F_isom(l_CE,cm)
+       F_isom = calc_F_isom(l_CE,l_CE_opt,cm)
 c
 c  Force of the parallel elastic element PEE
        F_PEE = calc_F_PEE(l_CE, cm, l_PEE0, K_PEE)
 c
 c  Force of the serial elastic element SEE
 c
-       F_SEE = calc_F_SEE(l_CE,cm,elleng,l_SEE_nll,v_SEE,K_SEE_nl,K_SEE_l)
+       F_SEE = calc_F_SEE(l_CE,l_SEE_0,cm,elleng,l_SEE_nll,v_SEE,K_SEE_nl,K_SEE_l)
 c
 c  Hill Parameters concentric contraction
 c
-       if (l_CE.LT.cm(10)) then
+       if (l_CE.LT.l_CE_opt) then
              L_A_rel = 1.0
        else 
              L_A_rel = F_isom
@@ -1184,8 +1172,8 @@ c
        Q_Brel = (1.0/7.0)*(3.0+4.0*q)
        B_rel = cm(16)*Q_Brel
 C  CE CONTRACTION VELOCITY CALCULATION
-       call calc_damping(q,cm,A_rel,B_rel,F_SEE,F_PEE,F_isom,dot_l_MTC,D0,C2,C1,C0,l_PEE0,K_PEE,
-     1 d_SE_max)
+       call calc_damping(q,l_CE_opt,cm,A_rel,B_rel,F_SEE,F_PEE,F_isom,dot_l_MTC,D0,C2,C1,
+     1 C0,l_PEE0,K_PEE,d_SE_max)
 c         
        DD = C1**2.0-4.0*C2*C0
        IF ((abs(C2).GT.0.0).and.(DD.GE.0.0)) THEN
@@ -1202,8 +1190,8 @@ C
             A_rel = -cm(18)*q*F_isom
 C
 C  CE ECCENTRIC CONTRACTION VELOCITY CALCULATION
-            call calc_damping(q,cm,A_rel,B_rel,F_SEE,F_PEE,F_isom,dot_l_MTC,D0,C2,C1,C0,l_PEE0,K_PEE,
-     1 d_SE_max)
+            call calc_damping(q,l_CE_opt,cm,A_rel,B_rel,F_SEE,F_PEE,F_isom,dot_l_MTC,D0,C2,C1,
+     1 C0,l_PEE0,K_PEE,d_SE_max)
 c
             DD = C1**2.0-4.0*C2*C0
 c
@@ -1222,16 +1210,16 @@ c
       ENDIF 
 C NUMERICAL RESTRICTION CHECK
 C 
-      IF (l_CE.LT.(0.001*cm(10))) THEN
+      IF (l_CE.LT.(0.001*l_CE_opt)) THEN
             dot_l_CE = dot_l_MTC
-      ELSE IF (l_CE.GT.(1.999*cm(10))) THEN
+      ELSE IF (l_CE.GT.(1.999*l_CE_opt)) THEN
             l_SEE = elleng-l_CE
             IF (l_SEE.GT.l_SEE_nll) THEN
                   dot_l_CE = dot_l_MTC/(1.0+(K_PEE*cm(20)*(l_CE-l_PEE0)**
      1        (cm(20)-1.0))/K_SEE_l)
             ELSE
                   dot_l_CE = dot_l_MTC/(1.0+(K_PEE*cm(20)*(l_CE-l_PEE0)**
-     1        (cm(20)-1.0))/(K_SEE_nl*v_SEE*(l_SEE-cm(22))**
+     1        (cm(20)-1.0))/(K_SEE_nl*v_SEE*(l_SEE-l_SEE_0)**
      2        (v_SEE-1.0)))
             ENDIF
       ENDIF
@@ -1246,7 +1234,7 @@ c
             B_rel = (q*F_isom*(1.0-cm(18))/(q*F_isom+A_rel)*B_rel/cm(17))
             A_rel = -cm(18)*q*F_isom
       ENDIF
-            F_CE = cm(9)*(((q*F_isom+A_rel)/(1.0-dot_l_CE/(cm(10)*B_rel)))-A_rel)
+            F_CE = cm(9)*(((q*F_isom+A_rel)/(1.0-dot_l_CE/(l_CE_opt*B_rel)))-A_rel)
 c
       IF (F_CE.LT.0.0) THEN
             F_CE = 0.0
@@ -1281,17 +1269,17 @@ C-----------------------------------------------
 C   calc_damping SUBROUTINE 
 C----------------------------------------------		
 C	
-      SUBROUTINE calc_damping(q,cm,A_rel,B_rel,F_SEE,F_PEE,F_isom,dot_l_MTC,D0,C2,C1,C0,l_PEE0,K_PEE,
-     1 d_SE_max)
+      SUBROUTINE calc_damping(q,l_CE_opt,cm,A_rel,B_rel,F_SEE,F_PEE,F_isom,dot_l_MTC,D0,C2,C1,
+     1 C0,l_PEE0,K_PEE,d_SE_max)
             DOUBLE PRECISION,dimension(39) :: cm
             DOUBLE PRECISION :: q,A_rel,B_rel,F_SEE,F_PEE,F_isom
-            DOUBLE PRECISION :: dot_l_MTC,d_SE_max,D0,C2,C1,C0,l_PEE0,K_PEE
+            DOUBLE PRECISION :: dot_l_MTC,d_SE_max,D0,C2,C1,C0,l_PEE0,K_PEE,l_CE_opt
 C    
 C!  3. Force-dependent serial (SE)-Damping
-            D0 = cm(10)*B_rel*d_SE_max*(cm(28)+(1.0-cm(28))*(q*F_isom+F_PEE/cm(9)))
+            D0 = l_CE_opt*B_rel*d_SE_max*(cm(28)+(1.0-cm(28))*(q*F_isom+F_PEE/cm(9)))
             C2 = d_SE_max*(cm(28)-(A_rel-F_PEE/cm(9))*(1.0-cm(28)))
             C1 = -C2*dot_l_MTC-D0-F_SEE+F_PEE-cm(9)*A_rel
-            C0 = D0*dot_l_MTC+cm(10)*B_rel*(F_SEE-F_PEE-cm(9)*q*F_isom)
+            C0 = D0*dot_l_MTC+l_CE_opt*B_rel*(F_SEE-F_PEE-cm(9)*q*F_isom)
       RETURN
       END
 C
