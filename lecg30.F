@@ -63,7 +63,7 @@ C-----------------------------------------------
       INTEGER IFUNC2,IFUNC3
       DOUBLE PRECISION
      .  AMAS,DIAMETER,ELASTIF,XK,SENS_IDf,q0,tauq,betaq,k,m,muscle,
-     .  Fmax,lCEopt,dWdes,
+     .  Fmax,t_lCEopt,dWdes,
      .  nuCEdes,dWasc,nuCEasc,Arel0,Brel0,
      .  Secc,Fecc,LPEE0,nuPEE,FPEE,lSEE0,dUSEEnll,duSEEl,
      .  dFSEE0,Damping,Param1,Param2,
@@ -77,7 +77,7 @@ C
         WRITE(IOUT,*) '  by  C. Kleinbach, O. Martynenko, J. Promies, D.F.B. Haeufle, J. Fehr, S. Schmitt'
         WRITE(IOUT,*) '  Extended Hill-type Muscle Model       '
         WRITE(IOUT,*) '        *** Springs  ***                '
-        WRITE(IOUT,*) '       M.Bulla 2019.10.11               '
+        WRITE(IOUT,*) '    M.Bulla, A.Ardisson 2025.03.10      '
         WRITE(IOUT,*) '                                        ' 
         
         NUVAR     = 39
@@ -270,7 +270,7 @@ c!
         READ(IIN,ERR=999,END=999,FMT='(5F20.0)')
      .                    STIM_ID,q0,tauq,betaq,k
         READ(IIN,ERR=999,END=999,FMT='(5F20.0)')
-     .                    m,muscle,Fmax,lCEopt,dWdes
+     .                    m,muscle,Fmax,t_lCEopt,dWdes
         READ(IIN,ERR=999,END=999,FMT='(5F20.0)')
      .                    nuCEdes,dWasc,nuCEasc,Arel0,Brel0
         READ(IIN,ERR=999,END=999,FMT='(5F20.0)')
@@ -297,7 +297,7 @@ c!     .     nuCEdes,dWasc,nuCEasc,Arel0,Brel0,Secc,Fecc,LPEE0,nuPEE,FPEE,
 c!     .     lSEE0,dUSEEnll,duSEEl,dFSEE0,Damping,Param1,Param2,output_MTD,
 c!     .     timeste,Activation,target_l_CE,kp,kd,dotlCEdelay,t_PreSim,threshold
         WRITE(IOUT,1000)
-     .     AMAS,DIAMETER,XK,ActOpt,STIM_ID,q0,tauq,betaq,k,m,muscle,Fmax,lCEopt,dWdes,
+     .     AMAS,DIAMETER,XK,ActOpt,STIM_ID,q0,tauq,betaq,k,m,muscle,Fmax,t_lCEopt,dWdes,
      .     nuCEdes,dWasc,nuCEasc,Arel0,Brel0,Secc,Fecc,LPEE0,nuPEE,FPEE,
      .     lSEE0,dUSEEnll,duSEEl,dFSEE0,Damping,Param1,Param2,output_MTD,
      .     timeste,Activation,target_l_CE,kp,kd,dotlCEdelay,t_PreSim,threshold
@@ -340,7 +340,7 @@ C-----------------------------------------------------------------------
         IERROR = SET_U_GEO(11,m)
         IERROR = SET_U_GEO(12,muscle)
         IERROR = SET_U_GEO(13,Fmax)
-        IERROR = SET_U_GEO(14,lCEopt)
+        IERROR = SET_U_GEO(14,t_lCEopt)
         IERROR = SET_U_GEO(15,dWdes)
         
         IERROR = SET_U_GEO(16,nuCEdes)
@@ -411,7 +411,7 @@ C
      & 5X,'muscle length offset (not needed, use instead *Part_Averaged for routing)',E12.4/,
      & 5X,'Variables (isometric force):',/,
      & 5X,'F_max maximum isometric force. . . . . . . . . . . . . . . . . . . . . .=',E12.4/,
-     & 5X,'l_CE_opt optimal fibre length. . . . . . . . . . . . . . . . . . . . . .=',E12.4/,
+     & 5X,'t_l_CE_opt optimal fibre length proportion . . . . . . . . . . . . . . .=',E12.4/,
      & 5X,'dW_des . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .=',E12.4/,
      & 5X,'nu_CE_des. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .=',E12.4/,
      & 5X,'dW_asc . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .=',E12.4/,

@@ -668,7 +668,7 @@ C-----------------------------------------------
       INTEGER SENS_ID,IERROR,ActOpt,output_MTD,STIM_ID,numelb
       DOUBLE PRECISION
      .  AMAS,DIAMETER,ELASTIF,XK,SENS_IDf,STIM_ID_f,q0,tauq,betaq,k,m,muscle,
-     .  Fmax,lCEopt,dWdes,
+     .  Fmax,t_lCEopt,dWdes,
      .  nuCEdes,dWasc,nuCEasc,Arel0,Brel0,
      .  Secc,Fecc,LPEE0,nuPEE,FPEE,lSEE0,dUSEEnll,duSEEl,
      .  dFSEE0,Damping,Param1,Param2,
@@ -792,8 +792,8 @@ c!     Variables (isometric force)
 c!
       Fmax        = GET_U_GEO(13,IPROP)
       cm(9)       = Fmax
-      lCEopt      = GET_U_GEO(14,IPROP)
-      cm(10)      = lCEopt
+      t_lCEopt      = GET_U_GEO(14,IPROP)
+      cm(10)      = t_lCEopt
       dWdes       = GET_U_GEO(15,IPROP)
       cm(11)      = dWdes
                      
@@ -918,7 +918,7 @@ C initialization of initial laength
           print *,'m           = ',m          , cm(7)
           print *,'muscle      = ',muscle     , cm(8)
           print *,'Fmax        = ',Fmax       , cm(9)
-          print *,'lCEopt      = ',lCEopt     , cm(10)
+          print *,'t_lCEopt      = ',t_lCEopt  , cm(10)
           print *,'dWdes       = ',dWdes      , cm(11)
                                               
           print *,'nuCEdes     = ',nuCEdes    , cm(12)
@@ -1054,8 +1054,6 @@ c!      Use Activation Values directly
       ELSE 
             STIM = calc_STIM(cm,UVAR,tt,lCEdelay,dotlCEdelay,ncycle,NUVAR,I,IFUNC1,IFUNC2,IFUNC3,GET_U_FUNC)
             q = calc_q(cm,l_CE_opt,UVAR,tt,STIM,DT,NUVAR,I,GET_U_FUNC,IFUNC2)
-            print*, 'q scirpt = ',q
-            print*, 'STIM script = ',STIM
       ENDIF
 C----------------------calc dot_l_MTC------------
 C     IF (ncycle.GT.1) THEN
