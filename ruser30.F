@@ -967,7 +967,7 @@ C-----------------------------------------------
 C   Calc length element
 C-----------------------------------------------
 C
-      l_CE_opt = cm(10)*UVAR(16,I)
+      l_CE_opt = cm(10)*UVAR(16,I)        !relative elongation of contractile element
       l_SEE_0 = (1-cm(10))*UVAR(16,I)
       l_PEE0 = cm(19)*l_CE_opt 
       d_SE_max = cm(27)*(cm(9)*cm(15))/(l_CE_opt*cm(16))
