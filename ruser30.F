@@ -670,7 +670,7 @@ C-----------------------------------------------
      .  AMAS,DIAMETER,ELASTIF,XK,SENS_IDf,STIM_ID_f,q0,tauq,betaq,k,m,muscle,
      .  Fmax,t_lCEopt,dWdes,
      .  nuCEdes,dWasc,nuCEasc,Arel0,Brel0,
-     .  Secc,Fecc,LPEE0,nuPEE,FPEE,lSEE0,dUSEEnll,duSEEl,
+     .  Secc,Fecc,LPEE0,nuPEE,FPEE,dUSEEnll,duSEEl,
      .  dFSEE0,Damping,Param1,Param2,
      .  timeste,Activation,target_l_CE,kp,kd,
      .  DOtlCEdelay,t_PreSim,threshold,ActOpt_f,  
@@ -831,9 +831,7 @@ c!
 c!
 c!     Variables (Seriell elastic element)
 c!
-                     
-      lSEE0       = GET_U_GEO(26,IPROP)
-      cm(22)      = lSEE0
+
       dUSEEnll    = GET_U_GEO(27,IPROP)
       cm(23)      = dUSEEnll
       duSEEl      = GET_U_GEO(28,IPROP)
@@ -933,7 +931,6 @@ C initialization of initial laength
           print *,'nuPEE       = ',nuPEE      , cm(20)
           print *,'FPEE        = ',FPEE       , cm(21)
                                               
-          print *,'lSEE0       = ',lSEE0      , cm(22)
           print *,'dUSEEnll    = ',dUSEEnll   , cm(23) 
           print *,'duSEEl      = ',duSEEl     , cm(24)
           print *,'dFSEE0      = ',dFSEE0     , cm(25)

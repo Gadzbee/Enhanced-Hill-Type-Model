@@ -65,7 +65,7 @@ C-----------------------------------------------
      .  AMAS,DIAMETER,ELASTIF,XK,SENS_IDf,q0,tauq,betaq,k,m,muscle,
      .  Fmax,t_lCEopt,dWdes,
      .  nuCEdes,dWasc,nuCEasc,Arel0,Brel0,
-     .  Secc,Fecc,LPEE0,nuPEE,FPEE,lSEE0,dUSEEnll,duSEEl,
+     .  Secc,Fecc,LPEE0,nuPEE,FPEE,dUSEEnll,duSEEl,
      .  dFSEE0,Damping,Param1,Param2,
      .  timeste,Activation,target_l_CE,kp,kd,
      .  dotlCEdelay,t_PreSim,threshold,ActOpt_f,SENS_ID_f,output_MTD_f,
@@ -275,8 +275,8 @@ c!
      .                    nuCEdes,dWasc,nuCEasc,Arel0,Brel0
         READ(IIN,ERR=999,END=999,FMT='(5F20.0)')
      .                    Secc,Fecc,LPEE0,nuPEE,FPEE
-        READ(IIN,ERR=999,END=999,FMT='(4F20.0)')
-     .                    lSEE0,  dUSEEnll,    duSEEl, dFSEE0
+        READ(IIN,ERR=999,END=999,FMT='(3F20.0)')
+     .                    dUSEEnll,    duSEEl, dFSEE0
         READ(IIN,ERR=999,END=999,FMT='(3F20.0,I10)')
      .                    Damping,Param1,Param2,output_MTD
         READ(IIN,ERR=999,END=999,FMT='(5F20.0)')
@@ -299,7 +299,7 @@ c!     .     timeste,Activation,target_l_CE,kp,kd,dotlCEdelay,t_PreSim,threshold
         WRITE(IOUT,1000)
      .     AMAS,DIAMETER,XK,ActOpt,STIM_ID,q0,tauq,betaq,k,m,muscle,Fmax,t_lCEopt,dWdes,
      .     nuCEdes,dWasc,nuCEasc,Arel0,Brel0,Secc,Fecc,LPEE0,nuPEE,FPEE,
-     .     lSEE0,dUSEEnll,duSEEl,dFSEE0,Damping,Param1,Param2,output_MTD,
+     .     dUSEEnll,duSEEl,dFSEE0,Damping,Param1,Param2,output_MTD,
      .     timeste,Activation,target_l_CE,kp,kd,dotlCEdelay,t_PreSim,threshold
 c!C
         IERROR = SET_U_GEO(1,AMAS)
@@ -355,7 +355,6 @@ C-----------------------------------------------------------------------
         IERROR = SET_U_GEO(24,nuPEE)
         IERROR = SET_U_GEO(25,FPEE)
 
-        IERROR = SET_U_GEO(26,lSEE0)
         IERROR = SET_U_GEO(27,dUSEEnll)
         IERROR = SET_U_GEO(28,duSEEl)
         IERROR = SET_U_GEO(29,dFSEE0)
