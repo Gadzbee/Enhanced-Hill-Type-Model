@@ -1,7 +1,10 @@
 *.out
 *.bat
 *.dll
-Gunther_1D*
+Gunther_1DA*
 *.out
 *.lib
 *.exp
+*.rst
+*.csv
+*T01
