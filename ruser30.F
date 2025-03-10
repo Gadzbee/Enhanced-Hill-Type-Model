@@ -1090,7 +1090,6 @@ C            print*, "l_CE = ", l_CE
 C            print*, "dot_l_CE = ", dot_l_CE
 C            print*, "dot_l_MTC = ", dot_l_MTC
 C            print*, "q = ", q
-             print*, "UVAR(16,I)=", UVAR(16,I)
       ENDIF
 C-----------------------------------------------
 C      IF (int(cm(29)).EQ.1.0) THEN
@@ -1198,9 +1197,9 @@ c
                   dot_l_CE = 0.0
             ENDIF
 C 
-      IF (dot_l_CE.LT.0.0) THEN
-            PRINT*, 'eccentric case error in muscle'
-      ENDIF
+C      IF (dot_l_CE.LT.0.0) THEN
+C            PRINT*, 'eccentric case error in muscle'
+C      ENDIF
 c            
       ENDIF 
 C NUMERICAL RESTRICTION CHECK
